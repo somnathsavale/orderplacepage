@@ -6,10 +6,7 @@ from urllib.request import Request, urlopen
 from flask import Flask, render_template, request
 
 app = Flask(__name__, template_folder=".")
-DASHBOARD_URL = os.environ.get(
-	"CANTEEN_DASHBOARD_URL",
-	"https://smart-campus-dashboard-kappa.vercel.app",
-).rstrip("/")
+DASHBOARD_URL = "https://smart-campus-dashboard-kappa.vercel.app"
 
 
 class DashboardResponseError(Exception):
