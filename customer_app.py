@@ -6,7 +6,11 @@ from urllib.request import Request, urlopen
 from flask import Flask, render_template, request
 
 app = Flask(__name__, template_folder=".")
-DASHBOARD_URL = os.environ.get("CANTEEN_DASHBOARD_URL", "http://127.0.0.1:5000").rstrip("/")
+DASHBOARD_URL = os.environ.get(
+	"CANTEEN_DASHBOARD_URL",
+	"https://smart-campus-dashboard-qgpvvfmoh.vercel.app",
+).rstrip("/")
+DASHBOARD_BYPASS_TOKEN = os.environ.get("CANTEEN_DASHBOARD_BYPASS_TOKEN", "")
 
 
 def create_dashboard_order(name, food):
@@ -16,6 +20,8 @@ def create_dashboard_order(name, food):
 		headers={"Content-Type": "application/json"},
 		method="POST",
 	)
+	if DASHBOARD_BYPASS_TOKEN:
+		order_request.add_header("x-vercel-protection-bypass", DASHBOARD_BYPASS_TOKEN)
 	with urlopen(order_request, timeout=10) as response:
 		return json.loads(response.read().decode("utf-8"))
 
