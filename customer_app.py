@@ -2,6 +2,7 @@ import json
 import os
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+	# No-op placeholder
 
 from flask import Flask, render_template, request
 
@@ -11,6 +12,10 @@ DASHBOARD_URL = os.environ.get(
 	"https://smart-campus-dashboard-qgpvvfmoh.vercel.app",
 ).rstrip("/")
 DASHBOARD_BYPASS_TOKEN = os.environ.get("CANTEEN_DASHBOARD_BYPASS_TOKEN", "")
+
+
+class DashboardResponseError(Exception):
+	pass
 
 
 def create_dashboard_order(name, food):
@@ -23,6 +28,8 @@ def create_dashboard_order(name, food):
 	if DASHBOARD_BYPASS_TOKEN:
 		order_request.add_header("x-vercel-protection-bypass", DASHBOARD_BYPASS_TOKEN)
 	with urlopen(order_request, timeout=10) as response:
+		if response.headers.get_content_type() != "application/json":
+			raise DashboardResponseError(response.headers.get_content_type())
 		return json.loads(response.read().decode("utf-8"))
 
 
@@ -51,8 +58,30 @@ def order_page():
 					status_code = 502
 				elif order["status"] == "Waiting":
 					queue_ahead = max(0, int(result.get("queue", 1)) - 1)
-			except (HTTPError, URLError, TimeoutError, ValueError):
-				error = "The canteen service is temporarily unavailable. Please try again shortly."
+			except HTTPError as exc:
+				app.logger.warning("Dashboard API returned HTTP %s", exc.code)
+				if exc.code in (401, 403):
+					error = "SmartCampus blocked this order. Check the Vercel protection bypass configuration."
+				elif exc.code == 404:
+					error = "SmartCampus order API was not found. Check the dashboard URL and deployment."
+				else:
+					error = "SmartCampus could not accept this order. Check the dashboard deployment logs."
+				status_code = 502
+			except URLError as exc:
+				app.logger.warning("Could not reach SmartCampus: %s", exc.reason)
+				error = "Cannot reach SmartCampus. Check the dashboard URL and deployment."
+				status_code = 502
+			except TimeoutError:
+				app.logger.warning("SmartCampus order request timed out")
+				error = "SmartCampus did not respond in time. Please try again shortly."
+				status_code = 502
+			except DashboardResponseError as exc:
+				app.logger.warning("Dashboard returned non-JSON content: %s", exc)
+				error = "SmartCampus returned a sign-in or error page instead of the order API response. Check its Vercel protection settings."
+				status_code = 502
+			except ValueError:
+				app.logger.warning("Dashboard returned invalid JSON")
+				error = "SmartCampus returned an invalid order response. Check the dashboard deployment logs."
 				status_code = 502
 
 	return render_template("order.html", order=order, error=error, queue_ahead=queue_ahead), status_code
