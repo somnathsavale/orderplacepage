@@ -8,9 +8,8 @@ from flask import Flask, render_template, request
 app = Flask(__name__, template_folder=".")
 DASHBOARD_URL = os.environ.get(
 	"CANTEEN_DASHBOARD_URL",
-	"https://smart-campus-dashboard-qgpvvfmoh.vercel.app",
+	"https://smart-campus-dashboard-kappa.vercel.app",
 ).rstrip("/")
-DASHBOARD_BYPASS_TOKEN = os.environ.get("CANTEEN_DASHBOARD_BYPASS_TOKEN", "")
 
 
 class DashboardResponseError(Exception):
@@ -24,8 +23,6 @@ def create_dashboard_order(name, food):
 		headers={"Content-Type": "application/json"},
 		method="POST",
 	)
-	if DASHBOARD_BYPASS_TOKEN:
-		order_request.add_header("x-vercel-protection-bypass", DASHBOARD_BYPASS_TOKEN)
 	with urlopen(order_request, timeout=10) as response:
 		if response.headers.get_content_type() != "application/json":
 			raise DashboardResponseError(response.headers.get_content_type())
