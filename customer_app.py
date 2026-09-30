@@ -5,7 +5,7 @@ from urllib.request import Request, urlopen
 
 from flask import Flask, render_template, request
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder=".")
 DASHBOARD_URL = os.environ.get("CANTEEN_DASHBOARD_URL", "http://127.0.0.1:5000").rstrip("/")
 
 

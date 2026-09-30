@@ -13,10 +13,10 @@ python customer_app.py
 
 Open `http://127.0.0.1:8000` for the customer form. The dashboard uses `SMART_DB` for its database path and defaults to `smart_dashboard.db` in the project directory.
 
-## Deploy as two services
+## Deploy the customer service
 
-Deploy the dashboard and customer app as separate web services from this repository. Use `python app.py` as the dashboard start command and `python customer_app.py` as the customer-site start command; both use the root `requirements.txt` and bind to the hosting provider's `PORT`.
+Deploy this repository as a web service with `gunicorn --bind 0.0.0.0:$PORT customer_app:app` as its start command. The root `requirements.txt` installs Flask and Gunicorn. The customer app binds to the hosting provider's `PORT` through Gunicorn.
 
-Set `CANTEEN_DASHBOARD_URL` on the customer service to the dashboard's reachable service URL, without an API path. Set `SMART_DB` on the dashboard to a path on persistent storage provided by the host. Keep the customer service pointed at that dashboard service so orders continue to enter the dashboard's database and queue. SQLite requires persistent storage attached to the dashboard service; do not point the customer service at a second local database file.
+Set `CANTEEN_DASHBOARD_URL` on the customer service to the reachable SmartCampus dashboard URL, without an API path. The dashboard must provide `POST /api/canteen/orders` and accept JSON with `name` and `food`; it remains responsible for creating tokens and saving orders. This repository contains only the customer service, so deploy the dashboard separately from its own source repository and configure its database and persistent storage there.
 
-Set `CANTEEN_ORDER_URL` on the dashboard service to the customer service's public URL so the dashboard's Canteen tab opens the deployed order page. It defaults to `http://127.0.0.1:8000` for local development.
+Set `CANTEEN_ORDER_URL` on the dashboard service to the customer service's public URL if the dashboard has a link to the order page. Visitors can submit orders, but there is no customer-facing interface for editing site settings or backend configuration. Restrict deployment and environment-variable access to trusted administrators in the hosting provider.
