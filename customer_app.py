@@ -2,7 +2,6 @@ import json
 import os
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
-	# No-op placeholder
 
 from flask import Flask, render_template, request
 
